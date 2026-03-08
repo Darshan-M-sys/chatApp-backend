@@ -33,6 +33,7 @@ authRouter.post("/register",async(req,res)=>{
     res.status(200).json({msg:"Registered Successful!",success:true,data:authData,profileData:createProfile});
   
   } catch (error) {
+    console.log(error.message)
     res.status(500).json({msg:"Internal Server error"})
   }
 })
@@ -91,4 +92,28 @@ authRouter.post("/logout",isAuthenticated,async(req,res)=>{
     res.status(500).json({msg:"Internal Server error!"})
   }
 })
+// without any credentials like otp and verify things
+authRouter.post("/reset-password",async(req,res)=>{
+  try {
+    const {email,password,newPassword}=req.body;
+     const userAccount= await  User.findOne({email:email});
+      if(!userAccount){
+       return res.json({msg:"Account Not found or  current password!"});
+      }
+      const passwordCompare= await bcrypt.compare(password,userAccount.password);
+      if(!passwordCompare){
+        return res.json({msg:"Password  Does not match"}) 
+      }
+      const salt = await bcrypt.genSalt(10);
+      const hashPass= await bcrypt.hash(newPassword,salt);
+       userAccount.password=hashPass;
+       await userAccount.save();
+       res.status(200).json({ success:true,msg:"Password Reset Successful!"});
+  } catch (error) {
+    res.status(500).json({msg:"Internal Server Error"})
+  }
+
+})
+
+
 module.exports=authRouter;
